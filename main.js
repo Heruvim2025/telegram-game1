@@ -1,8 +1,17 @@
 import * as THREE from 'three';
 
 // Initialize Telegram Game
-if (window.TelegramGameProxy) {
-  TelegramGameProxy.initParams();
+console.log('Initializing game...');
+try {
+  if (window.TelegramGameProxy) {
+    console.log('TelegramGameProxy found, initializing...');
+    TelegramGameProxy.initParams();
+    console.log('TelegramGameProxy initialized successfully');
+  } else {
+    console.log('TelegramGameProxy not found, running in standalone mode');
+  }
+} catch (error) {
+  console.error('Error initializing TelegramGameProxy:', error);
 }
 
 // Scene setup
