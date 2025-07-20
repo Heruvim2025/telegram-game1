@@ -57,6 +57,57 @@ window.addEventListener('keyup', (e) => {
   }
 });
 
+// Handle touch input
+let touchStartX = 0;
+let touchStartY = 0;
+const touchThreshold = 30; // минимальное расстояние для определения свайпа
+
+window.addEventListener('touchstart', (e) => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+});
+
+window.addEventListener('touchmove', (e) => {
+  e.preventDefault(); // Предотвращаем прокрутку страницы
+  const touchX = e.touches[0].clientX;
+  const touchY = e.touches[0].clientY;
+  
+  const diffX = touchX - touchStartX;
+  const diffY = touchY - touchStartY;
+  
+  // Сбрасываем все состояния
+  gameState.left = false;
+  gameState.right = false;
+  gameState.up = false;
+  gameState.down = false;
+  
+  // Определяем направление с наибольшим отклонением
+  if (Math.abs(diffX) > Math.abs(diffY)) {
+    if (Math.abs(diffX) > touchThreshold) {
+      if (diffX > 0) {
+        gameState.right = true;
+      } else {
+        gameState.left = true;
+      }
+    }
+  } else {
+    if (Math.abs(diffY) > touchThreshold) {
+      if (diffY > 0) {
+        gameState.down = true;
+      } else {
+        gameState.up = true;
+      }
+    }
+  }
+});
+
+window.addEventListener('touchend', () => {
+  gameState.left = false;
+  gameState.right = false;
+  gameState.up = false;
+  gameState.down = false;
+});
+
 // Handle window resize
 window.addEventListener('resize', () => {
   const width = window.innerWidth;
