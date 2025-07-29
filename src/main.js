@@ -21,29 +21,49 @@ const bgMusic = new THREE.Audio(audioListener);
 const audioLoader = new THREE.AudioLoader();
 
 // Load audio files from base64
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-function decodeBase64Audio(base64String) {
-  const binaryString = window.atob(base64String.split(',')[1]);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
+async function loadAudio(audioElement, base64Url) {
+  try {
+    const response = await fetch(base64Url);
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    audioElement.src = url;
+    return new Promise((resolve) => {
+      audioElement.oncanplaythrough = () => resolve();
+    });
+  } catch (error) {
+    console.warn('Error loading audio:', error);
+    return Promise.resolve(); // Continue even if audio fails
   }
-  return audioContext.decodeAudioData(bytes.buffer);
 }
+
+// Create HTML audio elements
+const audioElements = {
+  collect: new Audio(),
+  crash: new Audio(),
+  powerup: new Audio(),
+  background: new Audio()
+};
 
 // Load sound effects
-for (const [key, base64] of Object.entries(soundEffects)) {
-  decodeBase64Audio(base64).then(buffer => {
-    gameAudio[key].setBuffer(buffer);
-  });
-}
-
-// Load background music
-decodeBase64Audio(backgroundMusic).then(buffer => {
-  bgMusic.setBuffer(buffer);
-  bgMusic.setLoop(true);
-  bgMusic.setVolume(0.5);
+Promise.all([
+  ...Object.entries(soundEffects).map(([key, base64]) => 
+    loadAudio(audioElements[key], base64)
+  ),
+  loadAudio(audioElements.background, backgroundMusic)
+]).then(() => {
+  // Setup background music
+  audioElements.background.loop = true;
+  audioElements.background.volume = 0.5;
+  
+  // Replace Three.js audio with HTML Audio API
+  gameAudio.collect.play = () => audioElements.collect.play();
+  gameAudio.crash.play = () => audioElements.crash.play();
+  gameAudio.powerup.play = () => audioElements.powerup.play();
+  bgMusic.play = () => audioElements.background.play();
+  bgMusic.stop = () => {
+    audioElements.background.pause();
+    audioElements.background.currentTime = 0;
+  };
 });
 
 // Game state
