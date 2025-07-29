@@ -10,15 +10,13 @@ if (window.TelegramGameProxy) {
 }
 
 // Audio setup
-const audioListener = new THREE.AudioListener();
-const gameAudio = {
-  collect: new THREE.Audio(audioListener),
-  crash: new THREE.Audio(audioListener),
-  powerup: new THREE.Audio(audioListener),
+const soundEffects = {
+  collect: new Audio(),
+  crash: new Audio(),
+  powerup: new Audio()
 };
 
-const bgMusic = new THREE.Audio(audioListener);
-const audioLoader = new THREE.AudioLoader();
+const bgMusic = new Audio();
 
 // Load audio files from base64
 async function loadAudio(audioElement, base64Url) {
@@ -36,18 +34,10 @@ async function loadAudio(audioElement, base64Url) {
   }
 }
 
-// Create HTML audio elements
-const audioElements = {
-  collect: new Audio(),
-  crash: new Audio(),
-  powerup: new Audio(),
-  background: new Audio()
-};
-
 // Load sound effects
 Promise.all([
   ...Object.entries(soundEffects).map(([key, base64]) => 
-    loadAudio(audioElements[key], base64)
+    loadAudio(soundEffects[key], base64)
   ),
   loadAudio(audioElements.background, backgroundMusic)
 ]).then(() => {
@@ -184,10 +174,17 @@ function createTunnelSegment() {
   );
   
   const textureLoader = new THREE.TextureLoader();
-  const texture = textureLoader.load(environmentTextures.tunnel);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(4, 1);
+  const texture = textureLoader.load(environmentTextures.tunnel, 
+    function(texture) {
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(4, 1);
+    },
+    undefined,
+    function(err) {
+      console.error('Error loading texture:', err);
+    }
+  );
   
   const material = new THREE.MeshPhongMaterial({
     map: texture,
