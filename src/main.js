@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { backgroundMusic } from '../assets/sounds/background.js';
-import { soundEffects } from '../assets/sounds/effects.js';
-import { characterTextures } from '../assets/textures/characters.js';
-import { environmentTextures } from '../assets/textures/environment.js';
+import { backgroundMusic } from './assets/sounds/background.js';
+import { soundEffects } from './assets/sounds/effects.js';
+import { characterTextures } from './assets/textures/characters.js';
+import { environmentTextures } from './assets/textures/environment.js';
 
 // Initialize Telegram Game
 if (window.TelegramGameProxy) {
@@ -11,7 +11,7 @@ if (window.TelegramGameProxy) {
 
 // Audio setup
 const audioListener = new THREE.AudioListener();
-const soundEffects = {
+const gameAudio = {
   collect: new THREE.Audio(audioListener),
   crash: new THREE.Audio(audioListener),
   powerup: new THREE.Audio(audioListener),
@@ -35,7 +35,7 @@ function decodeBase64Audio(base64String) {
 // Load sound effects
 for (const [key, base64] of Object.entries(soundEffects)) {
   decodeBase64Audio(base64).then(buffer => {
-    soundEffects[key].setBuffer(buffer);
+    gameAudio[key].setBuffer(buffer);
   });
 }
 
