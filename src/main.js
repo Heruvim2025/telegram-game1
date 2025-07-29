@@ -9,8 +9,30 @@ if (window.TelegramGameProxy) {
   TelegramGameProxy.initParams();
 }
 
-// Audio setup
-const audioElements = {
+// Audio se# Start background music
+  audioElements.background.loop = true;
+  audioElements.background.currentTime = 0;
+  audioElements.background.play();
+}
+
+function gameOver() {
+  gameActive = false;
+  
+  // Остановить анимационный цикл
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+  
+  // Остановить музыку и проиграть звук столкновения
+  audioElements.background.pause();
+  audioElements.background.currentTime = 0;
+  try {
+    audioElements.crash.currentTime = 0;
+    audioElements.crash.play();
+  } catch (error) {
+    console.warn('Error playing crash sound:', error);
+  }ments = {
   collect: new Audio(),
   crash: new Audio(),
   powerup: new Audio(),
@@ -164,6 +186,16 @@ const loadedTextures = {};
 
 function preloadTextures() {
   return new Promise((resolve) => {
+    let loadedCount = 0;
+    const totalTextures = 1; // Увеличьте это число при добавлении новых текстур
+
+    function checkAllLoaded() {
+      loadedCount++;
+      if (loadedCount === totalTextures) {
+        resolve();
+      }
+    }
+
     // Load tunnel texture
     loadedTextures.tunnel = textureLoader.load(
       environmentTextures.tunnel,
@@ -171,14 +203,20 @@ function preloadTextures() {
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
         texture.repeat.set(4, 1);
-        resolve();
+        texture.needsUpdate = true;
+        checkAllLoaded();
       },
       undefined,
       (err) => {
         console.error('Error loading texture:', err);
-        resolve();
+        checkAllLoaded();
       }
     );
+
+    // Add image decoder
+    if (typeof createImageBitmap !== 'undefined') {
+      THREE.ImageBitmapLoader.prototype.options = { imageOrientation: 'flipY' };
+    }
   });
 }
 
@@ -449,6 +487,25 @@ function checkCollisions() {
   for (let i = bonuses.length - 1; i >= 0; i--) {
     const bonus = bonuses[i];
     const bonusBox = new THREE.Box3().setFromObject(bonus);
+
+    // Check collision with bonus
+    if (playerBox.intersectsBox(bonusBox)) {
+      // Play collect sound
+      try {
+        audioElements.collect.currentTime = 0;
+        audioElements.collect.play();
+      } catch (error) {
+        console.warn('Error playing collect sound:', error);
+      }
+
+      // Remove bonus
+      scene.remove(bonus);
+      bonuses.splice(i, 1);
+
+      // Increase score
+      score += 10;
+      continue;
+    }
     
     if (playerBox.intersectsBox(bonusBox)) {
       scene.remove(bonus);
