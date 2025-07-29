@@ -411,6 +411,14 @@ function startGame() {
 
 function gameOver() {
   gameActive = false;
+  
+  // Остановить анимационный цикл
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+  
+  // Остановить музыку и проиграть звук столкновения
   audioElements.background.pause();
   audioElements.background.currentTime = 0;
   audioElements.crash.play();
@@ -452,15 +460,21 @@ function checkCollisions() {
 }
 
 // Game loop
+let animationFrameId;
+
 function animate() {
-  requestAnimationFrame(animate);
+  if (!gameActive) {
+    cancelAnimationFrame(animationFrameId);
+    return;
+  }
   
-  if (gameActive) {
-    // Update player position
-    if (gameState.left) playerVelocity.x -= 0.01;
-    if (gameState.right) playerVelocity.x += 0.01;
-    if (gameState.up) playerVelocity.y += 0.01;
-    if (gameState.down) playerVelocity.y -= 0.01;
+  animationFrameId = requestAnimationFrame(animate);
+  
+  // Update player position
+  if (gameState.left) playerVelocity.x -= 0.01;
+  if (gameState.right) playerVelocity.x += 0.01;
+  if (gameState.up) playerVelocity.y += 0.01;
+  if (gameState.down) playerVelocity.y -= 0.01;
     
     // Apply drag
     playerVelocity.multiplyScalar(0.95);
