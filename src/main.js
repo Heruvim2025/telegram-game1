@@ -1,4 +1,8 @@
 import * as THREE from 'three';
+import { backgroundMusic } from '../assets/sounds/background.js';
+import { soundEffects } from '../assets/sounds/effects.js';
+import { characterTextures } from '../assets/textures/characters.js';
+import { environmentTextures } from '../assets/textures/environment.js';
 
 // Initialize Telegram Game
 if (window.TelegramGameProxy) {
@@ -16,11 +20,27 @@ const soundEffects = {
 const bgMusic = new THREE.Audio(audioListener);
 const audioLoader = new THREE.AudioLoader();
 
-// Load audio files
-audioLoader.load('sounds/collect.mp3', (buffer) => soundEffects.collect.setBuffer(buffer));
-audioLoader.load('sounds/crash.mp3', (buffer) => soundEffects.crash.setBuffer(buffer));
-audioLoader.load('sounds/powerup.mp3', (buffer) => soundEffects.powerup.setBuffer(buffer));
-audioLoader.load('sounds/background.mp3', (buffer) => {
+// Load audio files from base64
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+function decodeBase64Audio(base64String) {
+  const binaryString = window.atob(base64String.split(',')[1]);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return audioContext.decodeAudioData(bytes.buffer);
+}
+
+// Load sound effects
+for (const [key, base64] of Object.entries(soundEffects)) {
+  decodeBase64Audio(base64).then(buffer => {
+    soundEffects[key].setBuffer(buffer);
+  });
+}
+
+// Load background music
+decodeBase64Audio(backgroundMusic).then(buffer => {
   bgMusic.setBuffer(buffer);
   bgMusic.setLoop(true);
   bgMusic.setVolume(0.5);
@@ -62,19 +82,28 @@ const characters = {
   gatto: createCharacter('gatto', 0xFFA500),
 };
 
-function createCharacter(type, color) {
+function createCharacter(type) {
   const geometry = new THREE.Group();
+  
+  // Load character texture
+  const textureLoader = new THREE.TextureLoader();
+  const texture = textureLoader.load(characterTextures[type].body);
+  const material = new THREE.MeshPhongMaterial({
+    map: texture,
+    transparent: true,
+    side: THREE.DoubleSide
+  });
   
   // Body
   const body = new THREE.Mesh(
     new THREE.BoxGeometry(1, 0.5, 1),
-    new THREE.MeshPhongMaterial({ color: color })
+    material
   );
   
   // Head
   const head = new THREE.Mesh(
     new THREE.BoxGeometry(0.4, 0.4, 0.4),
-    new THREE.MeshPhongMaterial({ color: color })
+    material
   );
   head.position.z = 0.7;
   head.position.y = 0.1;
@@ -125,12 +154,18 @@ function createTunnelSegment() {
     tunnelLength / tunnelSegmentCount,
     16, 1, true
   );
+  
+  const textureLoader = new THREE.TextureLoader();
+  const texture = textureLoader.load(environmentTextures.tunnel);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(4, 1);
+  
   const material = new THREE.MeshPhongMaterial({
-    color: 0x444444,
+    map: texture,
     side: THREE.BackSide,
-    wireframe: true,
     transparent: true,
-    opacity: 0.3
+    opacity: 0.8
   });
   
   const segment = new THREE.Mesh(geometry, material);
@@ -147,16 +182,33 @@ for (let i = 0; i < tunnelSegmentCount; i++) {
 
 // Create obstacles
 function createObstacle() {
+  const textureLoader = new THREE.TextureLoader();
   const types = [
-    { geo: new THREE.SphereGeometry(0.5), color: 0xff0000, name: 'mozzarella' },
-    { geo: new THREE.CylinderGeometry(0.5, 0, 0.5), color: 0xff4400, name: 'pizza' },
-    { geo: new THREE.BoxGeometry(0.7, 1.2, 0.2), color: 0x8B4513, name: 'violin' }
+    { 
+      geo: new THREE.SphereGeometry(0.5), 
+      texture: textureLoader.load(environmentTextures.obstacles.mozzarella),
+      name: 'mozzarella' 
+    },
+    { 
+      geo: new THREE.CylinderGeometry(0.5, 0, 0.5), 
+      texture: textureLoader.load(environmentTextures.obstacles.pizza),
+      name: 'pizza' 
+    },
+    { 
+      geo: new THREE.BoxGeometry(0.7, 1.2, 0.2), 
+      texture: textureLoader.load(environmentTextures.obstacles.violin),
+      name: 'violin' 
+    }
   ];
   
   const type = types[Math.floor(Math.random() * types.length)];
   const obstacle = new THREE.Mesh(
     type.geo,
-    new THREE.MeshPhongMaterial({ color: type.color })
+    new THREE.MeshPhongMaterial({ 
+      map: type.texture,
+      transparent: true,
+      side: THREE.DoubleSide
+    })
   );
   
   const angle = Math.random() * Math.PI * 2;

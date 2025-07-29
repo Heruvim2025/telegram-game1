@@ -1,0 +1,2 @@
+// Italian-style background music (base64 encoded)
+export const backgroundMusic = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAAFbgCenp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6e//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAYAAAAAAAAABW4R3yTuAAAAAAD/+1DEAAAA0AGXAAAAAgAAA0gAAABExEVE//tAxCoAAABkAH0AAABoIAIPgAAAETEVE';
