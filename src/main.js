@@ -96,19 +96,27 @@ directionalLight.position.set(1, 1, 1);
 scene.add(directionalLight);
 
 // Character models
+const characterColors = {
+  crocodilo: 0x00ff00,
+  capibara: 0x8B4513,
+  gatto: 0xFFA500
+};
+
 const characters = {
-  crocodilo: createCharacter('crocodilo', 0x00ff00),
-  capibara: createCharacter('capibara', 0x8B4513),
-  gatto: createCharacter('gatto', 0xFFA500),
+  crocodilo: createCharacter('crocodilo'),
+  capibara: createCharacter('capibara'),
+  gatto: createCharacter('gatto'),
 };
 
 function createCharacter(type) {
   const geometry = new THREE.Group();
+  const color = characterColors[type];
   
   // Load character texture
   const textureLoader = new THREE.TextureLoader();
   const texture = textureLoader.load(characterTextures[type].body);
   const material = new THREE.MeshPhongMaterial({
+    color: color,
     map: texture,
     transparent: true,
     side: THREE.DoubleSide

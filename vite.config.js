@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: '/telegram-game1/',
+  base: './',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
