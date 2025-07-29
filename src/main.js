@@ -10,13 +10,12 @@ if (window.TelegramGameProxy) {
 }
 
 // Audio setup
-const soundEffects = {
+const audioElements = {
   collect: new Audio(),
   crash: new Audio(),
-  powerup: new Audio()
+  powerup: new Audio(),
+  background: new Audio()
 };
-
-const bgMusic = new Audio();
 
 // Load audio files from base64
 async function loadAudio(audioElement, base64Url) {
@@ -34,27 +33,25 @@ async function loadAudio(audioElement, base64Url) {
   }
 }
 
-// Load sound effects
+// Load sound effects and background music
 Promise.all([
-  ...Object.entries(soundEffects).map(([key, base64]) => 
-    loadAudio(soundEffects[key], base64)
-  ),
+  loadAudio(audioElements.collect, soundEffects.collect),
+  loadAudio(audioElements.crash, soundEffects.crash),
+  loadAudio(audioElements.powerup, soundEffects.powerup),
   loadAudio(audioElements.background, backgroundMusic)
 ]).then(() => {
   // Setup background music
   audioElements.background.loop = true;
   audioElements.background.volume = 0.5;
-  
-  // Replace Three.js audio with HTML Audio API
-  gameAudio.collect.play = () => audioElements.collect.play();
-  gameAudio.crash.play = () => audioElements.crash.play();
   gameAudio.powerup.play = () => audioElements.powerup.play();
   bgMusic.play = () => audioElements.background.play();
   bgMusic.stop = () => {
     audioElements.background.pause();
     audioElements.background.currentTime = 0;
   };
-});
+
+// Start the game
+initGame();
 
 // Game state
 let gameActive = false;
@@ -161,6 +158,30 @@ function createCharacter(type) {
   return geometry;
 }
 
+// Preload textures
+const textureLoader = new THREE.TextureLoader();
+const loadedTextures = {};
+
+function preloadTextures() {
+  return new Promise((resolve) => {
+    // Load tunnel texture
+    loadedTextures.tunnel = textureLoader.load(
+      environmentTextures.tunnel,
+      (texture) => {
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(4, 1);
+        resolve();
+      },
+      undefined,
+      (err) => {
+        console.error('Error loading texture:', err);
+        resolve();
+      }
+    );
+  });
+}
+
 // Create tunnel
 const tunnelRadius = 5;
 const tunnelLength = 50;
@@ -173,18 +194,12 @@ function createTunnelSegment() {
     16, 1, true
   );
   
-  const textureLoader = new THREE.TextureLoader();
-  const texture = textureLoader.load(environmentTextures.tunnel, 
-    function(texture) {
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat.set(4, 1);
-    },
-    undefined,
-    function(err) {
-      console.error('Error loading texture:', err);
-    }
-  );
+  const material = new THREE.MeshPhongMaterial({
+    map: loadedTextures.tunnel,
+    side: THREE.BackSide,
+    transparent: true,
+    opacity: 0.8
+  });
   
   const material = new THREE.MeshPhongMaterial({
     map: texture,
@@ -396,8 +411,9 @@ function startGame() {
 
 function gameOver() {
   gameActive = false;
-  bgMusic.stop();
-  soundEffects.crash.play();
+  audioElements.background.pause();
+  audioElements.background.currentTime = 0;
+  audioElements.crash.play();
   
   gameOverElement.style.display = 'block';
   finalScoreElement.textContent = Math.floor(score);
@@ -504,6 +520,29 @@ function animate() {
     // Increase difficulty over time
     const timePlayed = (Date.now() - gameStartTime) / 1000;
     currentSpeed = baseSpeed + (timePlayed * 0.001);
+}
+
+// Initialize game
+async function initGame() {
+    // Wait for all resources to load
+    await Promise.all([
+        preloadTextures(),
+        new Promise(resolve => {
+            Promise.all([
+                loadAudio(audioElements.collect, soundEffects.collect),
+                loadAudio(audioElements.crash, soundEffects.crash),
+                loadAudio(audioElements.powerup, soundEffects.powerup),
+                loadAudio(audioElements.background, backgroundMusic)
+            ]).then(() => {
+                audioElements.background.loop = true;
+                audioElements.background.volume = 0.5;
+                resolve();
+            });
+        })
+    ]);
+
+    // Start the game loop
+    animate();
     
     // Update score
     score += currentSpeed;
